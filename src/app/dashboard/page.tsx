@@ -54,7 +54,7 @@ export default function DashboardPage() {
             OneGrasp
           </h1>
 
-          <p className="text-gray-400 text-sm tracking-[3px] mt-2">
+          <p className="text-gray-00 text-sm tracking-[3px] mt-2 py-4">
             ASSESSMENT PLATFORM
           </p>
         </div>
@@ -79,20 +79,6 @@ export default function DashboardPage() {
 
           </button>
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <BarChart3 size={22} />
-            Analytics
-          </button>
-
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <FileText size={22} />
-            Reports
-          </button>
-
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <User size={22} />
-            Profile
-          </button>
 
         </nav>
 

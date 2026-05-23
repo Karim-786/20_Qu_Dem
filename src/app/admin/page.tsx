@@ -1,318 +1,298 @@
 "use client";
 
 import {
-  LayoutDashboard,
-  ClipboardList,
+  useState, useEffect,
+} from "react";
+import {
+  supabase,
+} from "@/app/lib/supabase";
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  Search,
   FileText,
-  Users,
-  Brain,
-  Settings,
-  Upload,
-  BarChart3,
+  Download,
+  ArrowRight,
 } from "lucide-react";
 
 export default function AdminPage() {
+
+  const router = useRouter();
+
+  const [assessmentId,
+    setAssessmentId] =
+    useState("");
+
+  const [loading,
+    setLoading] =
+    useState(false);
+
+  const handleGenerateReport =
+    async () => {
+
+      if (!assessmentId.trim()) {
+
+        alert(
+          "Please enter Assessment ID"
+        );
+
+        return;
+      }
+
+      try {
+
+        setLoading(true);
+
+        router.push(
+          `/report?id=${assessmentId}`
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "Failed to open report"
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+  useEffect(() => {
+
+    const checkAdmin =
+      async () => {
+
+        const {
+          data: { session },
+        } = await supabase
+          .auth
+          .getSession();
+
+        // NOT LOGGED IN
+
+        if (!session) {
+
+          router.push("/login");
+
+          return;
+        }
+
+        // FETCH USER ROLE
+
+        const {
+          data: profile,
+          error,
+        } = await supabase
+
+          .from("profiles")
+
+          .select("role")
+
+          .eq(
+            "id",
+            session.user.id
+          )
+
+          .maybeSingle();
+
+        if (error) {
+
+          console.error(error);
+
+          return;
+        }
+
+        if (!profile) {
+
+          alert(
+            "No admin profile found"
+          );
+
+          router.push(
+            "/dashboard"
+          );
+
+          return;
+        }
+        // NOT ADMIN
+
+        if (
+          profile?.role !==
+          "admin"
+        ) {
+
+          router.push(
+            "/dashboard"
+          );
+
+          return;
+        }
+
+        console.log(
+          "Admin Access Granted"
+        );
+      };
+
+    checkAdmin();
+
+  }, [router]);
   return (
-    <main className="min-h-screen flex bg-[#f5f5f5]">
 
-      {/* SIDEBAR */}
-      <aside className="w-72 bg-[#1f2937] text-white p-8 flex flex-col">
+    <main className="min-h-screen bg-[#f5f5f5] p-10">
 
-        {/* Logo */}
-        <div>
-          <h1 className="text-4xl font-black text-red-600">
-            OneGrasp
-          </h1>
+      <div className="max-w-5xl mx-auto">
 
-          <p className="text-gray-400 text-sm tracking-[3px] mt-2">
-            ADMIN PANEL
-          </p>
-        </div>
+    <div className="bg-white rounded-[32px] shadow-lg border border-gray-200 p-12 flex flex-col items-center justify-center w-max mx-auto font-sans">
+  
+  {/* Logo Graphic (Circle and G) */}
+  <div className="relative flex items-center justify-center mb-6 ml-8">
+    {/* Dark Gray Circle */}
+    <div className="absolute w-20 h-20 bg-[#515151] rounded-full -left-12 z-0 top-1/2 -translate-y-[45%]"></div>
+    {/* Red G */}
+    <div className="text-[150px] leading-none font-black text-[#dc2626] relative z-10 tracking-tighter">
+      G
+    </div>
+  </div>
 
-        {/* NAVIGATION */}
-        <nav className="mt-14 flex flex-col gap-4">
+  {/* Logo Text */}
+  <div className="flex items-baseline tracking-tight">
+    <h1 className="text-6xl font-medium text-[#515151] leading-none">
+      One
+    </h1>
+    <h1 className="text-6xl font-bold text-[#dc2626] leading-none">
+      Grasp
+    </h1>
+  </div>
 
-          <button className="flex items-center gap-4 bg-red-600 px-5 py-4 rounded-2xl font-medium">
-            <LayoutDashboard size={22} />
-            Dashboard
-          </button>
+  {/* Subtitle / Extra Text */}
+  <p className="mt-6 text-gray-500 tracking-[4px] text-sm font-bold uppercase">
+    Admin Report Generator
+  </p>
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <ClipboardList size={22} />
-            Questions
-          </button>
+</div>
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <Upload size={22} />
-            Upload MCQs
-          </button>
+        {/* REPORT GENERATOR */}
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <FileText size={22} />
-            Reports
-          </button>
+        <div className="bg-white rounded-[32px] shadow-lg border border-gray-200 p-10 mt-10">
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <Users size={22} />
-            Users
-          </button>
+          <div className="flex items-center gap-4">
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <BarChart3 size={22} />
-            Analytics
-          </button>
+            <div className="w-16 h-16 rounded-2xl bg-[#dc2626] flex items-center justify-center text-white">
 
-          <button className="flex items-center gap-4 hover:bg-gray-700 px-5 py-4 rounded-2xl transition">
-            <Settings size={22} />
-            Settings
-          </button>
-
-        </nav>
-
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <section className="flex-1 p-10 overflow-y-auto">
-
-        {/* HEADER */}
-        <div className="bg-white rounded-[32px] border border-gray-200 p-8 shadow-sm">
-
-          <h1 className="text-4xl font-black text-gray-900">
-            Admin Dashboard
-          </h1>
-
-          <p className="mt-3 text-gray-500 text-lg">
-            Manage assessments, questions, reports and users.
-          </p>
-
-        </div>
-
-        {/* STATS */}
-        <div className="grid lg:grid-cols-4 gap-6 mt-10">
-
-          {/* CARD */}
-          <div className="bg-white rounded-[28px] p-7 shadow-sm border border-gray-200">
-
-            <div className="flex items-center justify-between">
-
-              <div>
-                <p className="text-gray-500">
-                  Total Questions
-                </p>
-
-                <h1 className="text-5xl font-black text-red-600 mt-4">
-                  120
-                </h1>
-              </div>
-
-              <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                <ClipboardList className="text-red-600" size={32} />
-              </div>
+              <FileText size={32} />
 
             </div>
-
-          </div>
-
-          {/* CARD */}
-          <div className="bg-white rounded-[28px] p-7 shadow-sm border border-gray-200">
-
-            <div className="flex items-center justify-between">
-
-              <div>
-                <p className="text-gray-500">
-                  Reports Generated
-                </p>
-
-                <h1 className="text-5xl font-black text-red-600 mt-4">
-                  84
-                </h1>
-              </div>
-
-              <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                <FileText className="text-red-600" size={32} />
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* CARD */}
-          <div className="bg-white rounded-[28px] p-7 shadow-sm border border-gray-200">
-
-            <div className="flex items-center justify-between">
-
-              <div>
-                <p className="text-gray-500">
-                  Registered Users
-                </p>
-
-                <h1 className="text-5xl font-black text-red-600 mt-4">
-                  42
-                </h1>
-              </div>
-
-              <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                <Users className="text-red-600" size={32} />
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* CARD */}
-          <div className="bg-white rounded-[28px] p-7 shadow-sm border border-gray-200">
-
-            <div className="flex items-center justify-between">
-
-              <div>
-                <p className="text-gray-500">
-                  Assessments
-                </p>
-
-                <h1 className="text-5xl font-black text-red-600 mt-4">
-                  12
-                </h1>
-              </div>
-
-              <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center">
-                <Brain className="text-red-600" size={32} />
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* QUESTION MANAGEMENT */}
-        <div className="bg-white rounded-[32px] border border-gray-200 shadow-sm p-8 mt-10">
-
-          <div className="flex items-center justify-between">
 
             <div>
 
               <h2 className="text-3xl font-black text-gray-900">
-                Question Management
+                Generate Assessment Report
               </h2>
 
-              <p className="text-gray-500 mt-2">
-                Upload and manage psychometric questions
+              <p className="text-gray-500 mt-1">
+                Enter Assessment ID to open candidate report
               </p>
 
             </div>
 
-            <button className="px-6 py-3 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition font-medium">
-              Add New Question
-            </button>
+          </div>
+
+          {/* INPUT */}
+
+          <div className="mt-10">
+
+            <label className="text-lg font-semibold text-gray-700 block mb-4">
+              Assessment ID
+            </label>
+
+            <div className="flex gap-4">
+
+              <div className="flex-1 relative">
+
+                <Search
+                  size={22}
+                  className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Enter assessment ID"
+                  value={assessmentId}
+                  onChange={(e) =>
+                    setAssessmentId(
+                      e.target.value
+                    )
+                  }
+                  className="w-full h-16 rounded-2xl border border-gray-300 pl-14 pr-6 text-lg outline-none focus:border-[#dc2626]"
+                />
+
+              </div>
+
+              <button
+                onClick={handleGenerateReport}
+                disabled={loading}
+                className="h-16 px-8 rounded-2xl bg-[#dc2626] hover:bg-[#b91c1c] text-white font-bold text-lg transition flex items-center gap-3 disabled:opacity-60"
+              >
+
+                {
+                  loading ? (
+                    "Opening..."
+                  ) : (
+                    <>
+                      Generate
+                      <ArrowRight size={22} />
+                    </>
+                  )
+                }
+
+              </button>
+
+            </div>
 
           </div>
 
-          {/* TABLE */}
-          <div className="mt-8 overflow-x-auto">
+          {/* QUICK GUIDE */}
 
-            <table className="w-full">
+          <div className="mt-12 bg-gray-50 rounded-2xl p-8 border border-gray-200">
 
-              <thead>
+            <h3 className="text-2xl font-black text-gray-900">
+              How To Use
+            </h3>
 
-                <tr className="border-b border-gray-200 text-left">
+            <div className="mt-6 space-y-4 text-gray-600 text-lg">
 
-                  <th className="pb-4 text-gray-500 font-semibold">
-                    Question
-                  </th>
+              <p>
+                1. Open Supabase answers table
+              </p>
 
-                  <th className="pb-4 text-gray-500 font-semibold">
-                    Category
-                  </th>
+              <p>
+                2. Copy any existing assessment_id
+              </p>
 
-                  <th className="pb-4 text-gray-500 font-semibold">
-                    Type
-                  </th>
+              <p>
+                3. Paste it above
+              </p>
 
-                  <th className="pb-4 text-gray-500 font-semibold">
-                    Status
-                  </th>
+              <p>
+                4. Click Generate
+              </p>
 
-                </tr>
+              <p>
+                5. Professional psychometric report opens instantly
+              </p>
 
-              </thead>
-
-              <tbody>
-
-                <tr className="border-b border-gray-100">
-
-                  <td className="py-5">
-                    I enjoy solving logical problems.
-                  </td>
-
-                  <td className="py-5">
-                    Aptitude
-                  </td>
-
-                  <td className="py-5">
-                    MCQ
-                  </td>
-
-                  <td className="py-5">
-                    <span className="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                      Active
-                    </span>
-                  </td>
-
-                </tr>
-
-                <tr className="border-b border-gray-100">
-
-                  <td className="py-5">
-                    I prefer working in teams.
-                  </td>
-
-                  <td className="py-5">
-                    Personality
-                  </td>
-
-                  <td className="py-5">
-                    MCQ
-                  </td>
-
-                  <td className="py-5">
-                    <span className="px-4 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                      Active
-                    </span>
-                  </td>
-
-                </tr>
-
-                <tr>
-
-                  <td className="py-5">
-                    I enjoy creative design tasks.
-                  </td>
-
-                  <td className="py-5">
-                    Interests
-                  </td>
-
-                  <td className="py-5">
-                    MCQ
-                  </td>
-
-                  <td className="py-5">
-                    <span className="px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 text-sm font-medium">
-                      Draft
-                    </span>
-                  </td>
-
-                </tr>
-
-              </tbody>
-
-            </table>
+            </div>
 
           </div>
 
         </div>
 
-      </section>
+      </div>
 
     </main>
   );
