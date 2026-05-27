@@ -1,277 +1,274 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/app/lib/supabase";
+import { useEffect, useState }
+  from "react";
 
-type Question = {
-  id: number;
-  question_number: number;
-  question_text: string;
-  category: string;
-  options: string[];
-};
+import { supabase }
+  from "@/app/lib/supabase";
 
-type Answer = {
-  question_id: number;
-  question_number: number;
-  answer: string;
-};
+import { useRouter }
+  from "next/navigation";
 
 export default function AssessmentPage() {
+  type CareerQuestion = {
 
+    id: number;
+
+    question_number: number;
+
+    question_text: string;
+
+    category: string;
+
+    options: string[];
+  };
   const router = useRouter();
 
   const [questions, setQuestions] =
-    useState<Question[]>([]);
+    useState<CareerQuestion[]>([]);
 
-  const [currentQuestionIndex,
-    setCurrentQuestionIndex] =
+  const [currentQuestion,
+    setCurrentQuestion] =
     useState(0);
 
-  const [selectedAnswer,
-    setSelectedAnswer] =
-    useState("");
-
   const [answers, setAnswers] =
-    useState<Answer[]>([]);
+    useState<Record<number, string>>({});
 
   const [loading, setLoading] =
     useState(true);
 
-  const [submitting, setSubmitting] =
+  const [submitting,
+    setSubmitting] =
     useState(false);
 
   // FETCH QUESTIONS
 
-  const fetchQuestions = async () => {
+  useEffect(() => {
 
-    try {
+    const fetchQuestions =
+      async () => {
 
-      const { data, error } =
-        await supabase
-          .from("questions")
+        const {
+          data,
+          error,
+        } = await supabase
+
+          .from(
+            "career_questions"
+          )
+
           .select("*")
+
           .order(
             "question_number",
             {
               ascending: true,
             }
-          );
+          )
 
-      if (error) {
+          .limit(20);
 
-        console.error(error);
+        if (error) {
+
+          console.error(error);
+
+          return;
+        }
+
+        setQuestions(data || []);
 
         setLoading(false);
-
-        return;
-      }
-
-      const cleanedQuestions =
-        (data || [])
-
-          .map((question: {
-            id: number;
-            question_number: number;
-            question_text: string;
-            category: string;
-            options: unknown;
-          }) => {
-
-            let parsedOptions:
-              string[] = [];
-
-            if (
-              Array.isArray(
-                question.options
-              )
-            ) {
-
-              parsedOptions =
-                question.options;
-            }
-
-            else if (
-              typeof question.options
-              === "string"
-            ) {
-
-              try {
-
-                parsedOptions =
-                  JSON.parse(
-                    question.options
-                  );
-
-              } catch {
-
-                parsedOptions = [];
-              }
-            }
-
-            else if (
-              typeof question.options
-              === "object"
-              &&
-              question.options !== null
-            ) {
-
-              parsedOptions =
-                Object.values(
-                  question.options
-                ) as string[];
-            }
-
-            return {
-              ...question,
-              options:
-                parsedOptions,
-            };
-          })
-
-          .filter(
-            (
-              question: Question
-            ) => {
-
-              return (
-                question.question_text &&
-                question.options &&
-                question.options.length > 0
-              );
-            }
-          );
-
-      setQuestions(
-        cleanedQuestions
-      );
-
-    } catch (err) {
-
-      console.error(err);
-
-    } finally {
-
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-
-    const loadQuestions =
-      async () => {
-
-        await fetchQuestions();
-
       };
 
-    loadQuestions();
+    fetchQuestions();
 
   }, []);
 
-  // NEXT QUESTION / SUBMIT
+  // HANDLE ANSWER
 
-  const handleNext = async () => {
+  const handleAnswer =
+    (
+      questionNumber: number,
+      answer: string
+    ) => {
 
-    if (!selectedAnswer) {
+      setAnswers({
+        ...answers,
 
-      alert(
-        "Please select an answer"
-      );
+        [questionNumber]:
+          answer,
+      });
+    };
 
-      return;
-    }
+  // NEXT QUESTION
 
-    const currentQuestion =
-      questions[
-      currentQuestionIndex
-      ];
-
-    const updatedAnswers = [
-
-      ...answers,
-
-      {
-        question_id:
-          currentQuestion.id,
-
-        question_number:
-          currentQuestion.question_number,
-
-        answer:
-          selectedAnswer,
-      },
-    ];
-
-    setAnswers(updatedAnswers);
-
-    // LAST QUESTION
+  const handleNext = () => {
 
     if (
-      currentQuestionIndex >=
+      currentQuestion <
       questions.length - 1
     ) {
 
-      setSubmitting(true);
-      const assessmentId =
-        crypto.randomUUID();
-      const formattedAnswers =
+      setCurrentQuestion(
+        currentQuestion + 1
+      );
+    }
+  };
 
-        updatedAnswers.map(
-          (item) => ({
+  // PREVIOUS QUESTION
 
-            assessment_id:
-              assessmentId,
+  const handlePrevious =
+    () => {
 
-            user_email:
-              "test@onegrasp.com",
+      if (
+        currentQuestion > 0
+      ) {
 
-            question_id:
-              item.question_id,
-
-            question_number:
-              item.question_number,
-
-            selected_answer:
-              item.answer,
-          })
+        setCurrentQuestion(
+          currentQuestion - 1
         );
+      }
+    };
 
-      const { error } =
+  // SUBMIT ASSESSMENT
 
-        await supabase
-          .from("answers")
-          .insert(
-            formattedAnswers
+  const handleSubmit =
+    async () => {
+
+      try {
+
+        setSubmitting(true);
+
+        const {
+          data: { user },
+        } = await supabase.auth
+          .getUser();
+
+        if (!user) {
+
+          alert(
+            "User not found"
           );
 
-      setSubmitting(false);
+          return;
+        }
 
-      if (error) {
+        // CREATE ASSESSMENT
+
+        const {
+          data: assessment,
+          error:
+          assessmentError,
+        } = await supabase
+
+          .from(
+            "career_assessments"
+          )
+
+          .insert([
+            {
+              user_email:
+                user.email,
+
+              recommendation:
+                "Career analysis generated successfully",
+            },
+          ])
+
+          .select()
+
+          .single();
+
+        if (
+          assessmentError
+        ) {
+
+          console.log(
+            "Assessment Insert Error:",
+            JSON.stringify(
+              assessmentError,
+              null,
+              2
+            )
+          );
+
+          return;
+        }
+
+        // SAVE ANSWERS
+
+        const answersPayload =
+          questions.map((q: CareerQuestion) => ({
+
+            assessment_id:
+              assessment.id,
+
+            user_email:
+              user.email,
+
+            question_number:
+              q.question_number,
+
+            question_text:
+              q.question_text,
+
+            selected_answer:
+              answers[
+              q.question_number
+              ] || "",
+
+            category:
+              q.category,
+          }));
+
+        const {
+          error: answersError,
+        } = await supabase
+
+          .from(
+            "career_answers"
+          )
+
+          .insert(
+            answersPayload
+          );
+
+        if (
+          answersError
+        ) {
+
+          console.log(
+            "Answers Insert Error:",
+            JSON.stringify(
+              answersError,
+              null,
+              2
+            )
+          );
+
+          return;
+        }
+
+        alert(
+          "Assessment Submitted Successfully"
+        );
+
+        console.log(
+          "Redirecting Dashboard"
+        );
+
+        window.location.href =
+          "/dashboard";
+
+      } catch (error) {
 
         console.error(error);
 
-        alert(
-          "Failed to submit assessment"
-        );
+      } finally {
 
-        return;
+        setSubmitting(false);
       }
-
-      router.push(
-        `/report?id=${assessmentId}`
-      );
-
-      return;
-    }
-
-    setSelectedAnswer("");
-
-    setCurrentQuestionIndex(
-      currentQuestionIndex + 1
-    );
-  };
+    };
 
   // LOADING
 
@@ -279,175 +276,206 @@ export default function AssessmentPage() {
 
     return (
 
-      <main className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center text-3xl font-bold">
 
-        <div className="bg-white px-10 py-8 rounded-3xl shadow-lg border border-gray-200">
+        Loading Questions...
 
-          <h1 className="text-3xl font-black text-[#dc2626] text-center">
-            Loading Assessment...
-          </h1>
-
-        </div>
-
-      </main>
+      </div>
     );
   }
 
-  const currentQuestion =
-    questions[currentQuestionIndex];
-
-  if (!currentQuestion) {
-
-    return (
-
-      <main className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
-
-        <h1 className="text-3xl font-bold text-[#dc2626]">
-          No Questions Found
-        </h1>
-
-      </main>
-    );
-  }
-
-  const progress =
-    ((currentQuestionIndex + 1)
-      / questions.length) * 100;
+  const question =
+    questions[currentQuestion];
 
   return (
 
-    <main className="min-h-screen bg-gradient-to-br from-[#f8f8f8] to-[#f1f1f1] py-10 px-5">
+    <main className="min-h-screen bg-[#f5f5f5] p-8">
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-4xl mx-auto bg-white rounded-[32px] shadow-lg p-10">
 
-        {/* TOP CARD */}
+        {/* TOP BAR */}
 
-        <div className="bg-white rounded-[32px] border border-gray-200 shadow-xl p-8">
+        <div className="flex items-center justify-between">
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
 
-            <div>
+            <h1 className="text-4xl font-black text-red-600">
 
-              <h1 className="text-5xl font-black text-[#dc2626] tracking-tight">
-                OneGrasp
-              </h1>
+              Career Assessment
 
-              <p className="text-gray-500 tracking-[4px] mt-3 font-medium uppercase">
-                Psychometric Assessment
-              </p>
+            </h1>
 
-            </div>
+            <p className="mt-2 text-gray-500">
 
-            <div className="text-right">
+              Question {
+                currentQuestion + 1
+              } of {
+                questions.length
+              }
 
-              <p className="text-gray-500 font-medium">
-                Question Progress
-              </p>
-
-              <h2 className="text-4xl font-black text-gray-900 mt-2">
-                {currentQuestionIndex + 1}
-                /
-                {questions.length}
-              </h2>
-
-            </div>
+            </p>
 
           </div>
 
-          {/* PROGRESS */}
+          <button
+            onClick={() =>
+              router.push(
+                "/dashboard"
+              )
+            }
+            className="bg-gray-800 text-white px-5 py-3 rounded-2xl"
+          >
 
-          <div className="mt-8 h-4 bg-gray-200 rounded-full overflow-hidden">
+            Dashboard
 
-            <div
-              className="h-full bg-[#dc2626] transition-all duration-500"
-              style={{
-                width: `${progress}%`,
-              }}
-            />
-
-          </div>
+          </button>
 
         </div>
 
-        {/* QUESTION CARD */}
+        {/* PROGRESS */}
 
-        <div className="bg-white rounded-[32px] border border-gray-200 shadow-xl p-10 mt-8">
+        <div className="mt-8 w-full bg-gray-200 h-3 rounded-full overflow-hidden">
 
-          {/* CATEGORY */}
+          <div
+            className="bg-red-600 h-3"
 
-          <div className="inline-flex items-center px-5 py-2 rounded-full bg-red-100 text-[#dc2626] font-semibold text-sm uppercase tracking-wide">
-            {currentQuestion.category}
-          </div>
+            style={{
+              width: `${(
+                (currentQuestion + 1) /
+                questions.length
+              ) * 100
+                }%`,
+            }}
+          />
 
-          {/* QUESTION */}
+        </div>
 
-          <h2 className="mt-8 text-3xl font-bold text-gray-900 leading-relaxed">
-            {currentQuestion.question_text}
+        {/* QUESTION */}
+
+        <div className="mt-12">
+
+          <h2 className="text-3xl font-bold leading-relaxed">
+
+            {
+              question.question_text
+            }
+
           </h2>
 
-          {/* OPTIONS */}
+          <p className="mt-3 text-gray-500">
 
-          <div className="mt-10 space-y-5">
+            Category:
+            {" "}
+            {question.category}
 
-            {currentQuestion.options.map(
-              (
-                option,
-                index
-              ) => (
+          </p>
+
+        </div>
+
+        {/* OPTIONS */}
+
+        <div className="mt-10 space-y-5">
+
+          {question.options.map(
+            (
+              option: string,
+              index: number
+            ) => (
+
+              <button
+                key={index}
+
+                onClick={() =>
+                  handleAnswer(
+                    question.question_number,
+                    option
+                  )
+                }
+
+                className={`w-full text-left p-5 rounded-2xl border-2 transition
+
+                ${answers[
+                    question.question_number
+                  ] === option
+
+                    ? "border-red-600 bg-red-50"
+
+                    : "border-gray-200 hover:border-red-400"
+                  }`}
+              >
+
+                {option}
+
+              </button>
+            )
+          )}
+
+        </div>
+
+        {/* NAVIGATION */}
+
+        <div className="mt-12 flex items-center justify-between">
+
+          <button
+
+            onClick={
+              handlePrevious
+            }
+
+            disabled={
+              currentQuestion === 0
+            }
+
+            className="bg-gray-300 px-6 py-3 rounded-2xl disabled:opacity-50"
+          >
+
+            Previous
+
+          </button>
+
+          {
+            currentQuestion ===
+              questions.length - 1
+
+              ? (
 
                 <button
-                  key={index}
-                  onClick={() =>
-                    setSelectedAnswer(option)
+                  onClick={
+                    handleSubmit
                   }
-                  className={`
-                  w-full
-                  text-left
-                  p-6
-                  rounded-2xl
-                  border-2
-                  transition-all
-                  duration-300
-                  text-lg
-                  font-medium
 
-                  ${selectedAnswer === option
-                      ? "border-[#dc2626] bg-red-50 text-[#dc2626] shadow-md"
-                      : "border-gray-200 hover:border-[#dc2626] hover:bg-gray-50"
-                    }
-                  `}
+                  disabled={
+                    submitting
+                  }
+
+                  className="bg-red-600 text-white px-8 py-3 rounded-2xl"
                 >
-                  {option}
+
+                  {
+                    submitting
+
+                      ? "Submitting..."
+
+                      : "Submit Assessment"
+                  }
+
+                </button>
+
+              ) : (
+
+                <button
+                  onClick={
+                    handleNext
+                  }
+
+                  className="bg-red-600 text-white px-8 py-3 rounded-2xl"
+                >
+
+                  Next
+
                 </button>
               )
-            )}
-
-          </div>
-
-          {/* ACTION BUTTON */}
-
-          <div className="mt-12 flex justify-end">
-
-            <button
-              onClick={handleNext}
-              disabled={submitting}
-              className="bg-[#dc2626] hover:bg-[#b91c1c] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 text-white px-10 py-4 rounded-2xl font-semibold text-lg shadow-lg"
-            >
-
-              {
-                currentQuestionIndex >=
-                  questions.length - 1
-
-                  ? submitting
-                    ? "Submitting..."
-                    : "Submit Assessment"
-
-                  : "Next Question"
-              }
-
-            </button>
-
-          </div>
+          }
 
         </div>
 

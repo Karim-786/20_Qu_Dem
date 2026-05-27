@@ -6,7 +6,6 @@ import { supabase } from "@/app/lib/supabase";
 import { generateReport, ReportData, Answer } from "@/app/lib/scoring";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { FaClone } from "react-icons/fa";
 
 // ─── Constants ────────────────────────────────────────────────
 const RED = "#dc2626";
@@ -15,7 +14,7 @@ const GRAY = "#6b7280";
 
 // A4 dimensions at 96dpi: 794px × 1123px
 const A4_H = 1123;
-
+ 
 // ─── Helpers ─────────────────────────────────────────────────
 function Bar({ pct, color = RED }: { pct: number; color?: string }) {
   return (
@@ -539,7 +538,8 @@ function ReportInner() {
   useEffect(() => {
     async function fetchAnswers() {
       const { data, error } = await supabase
-        .from("answers")
+      //change the from career_answers to answers for 130 
+        .from("career_answers")
         .select("*")
         .eq("assessment_id", assessmentId)
         .order("question_number", { ascending: true });

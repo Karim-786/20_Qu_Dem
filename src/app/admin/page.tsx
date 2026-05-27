@@ -84,97 +84,123 @@ export default function AdminPage() {
 
         // FETCH USER ROLE
 
+        // GET USER
+
         const {
-          data: profile,
-          error,
+          data: { user },
+          error: userError,
         } = await supabase
-
-          .from("profiles")
-
-          .select("role")
-
-          .eq(
-            "id",
-            session.user.id
-          )
-
-          .maybeSingle();
-
-        if (error) {
-
-          console.error(error);
-
-          return;
-        }
-
-        if (!profile) {
-
-          alert(
-            "No admin profile found"
-          );
-
-          router.push(
-            "/dashboard"
-          );
-
-          return;
-        }
-        // NOT ADMIN
+          .auth
+          .getUser();
 
         if (
-          profile?.role !==
-          "admin"
+          userError ||
+          !user
         ) {
 
-          router.push(
-            "/dashboard"
-          );
+          router.push("/login");
 
           return;
         }
 
-        console.log(
-          "Admin Access Granted"
+        // FETCH PROFILE
+
+      const {
+        data: profile,
+        error,
+      } = await supabase
+
+        .from("profiles")
+
+        .select("role")
+
+        .eq(
+          "email",
+          session.user.email
+        )
+
+        .maybeSingle();
+
+      console.log(profile);
+
+      console.log(error);
+
+      if (error) {
+
+        console.error(error);
+
+        return;
+      }
+
+      if (!profile) {
+
+        alert(
+          "No admin profile found"
         );
-      };
 
-    checkAdmin();
+        router.push(
+          "/dashboard"
+        );
 
-  }, [router]);
+        return;
+      }
+
+      // NOT ADMIN
+
+      if (
+        profile?.role !==
+        "admin"
+      ) {
+
+        router.push(
+          "/dashboard"
+        );
+
+        return;
+      }
+
+      console.log(
+        "Admin Access Granted"
+      );
+    };
+
+  checkAdmin();
+
+}, [router]);
   return (
 
     <main className="min-h-screen bg-[#f5f5f5] p-10">
 
       <div className="max-w-5xl mx-auto">
 
-    <div className="bg-white rounded-[32px] shadow-lg border border-gray-200 p-12 flex flex-col items-center justify-center w-max mx-auto font-sans">
-  
-  {/* Logo Graphic (Circle and G) */}
-  <div className="relative flex items-center justify-center mb-6 ml-8">
-    {/* Dark Gray Circle */}
-    <div className="absolute w-20 h-20 bg-[#515151] rounded-full -left-12 z-0 top-1/2 -translate-y-[45%]"></div>
-    {/* Red G */}
-    <div className="text-[150px] leading-none font-black text-[#dc2626] relative z-10 tracking-tighter">
-      G
-    </div>
-  </div>
+        <div className="bg-white rounded-[32px] shadow-lg border border-gray-200 p-12 flex flex-col items-center justify-center w-max mx-auto font-sans">
 
-  {/* Logo Text */}
-  <div className="flex items-baseline tracking-tight">
-    <h1 className="text-6xl font-medium text-[#515151] leading-none">
-      One
-    </h1>
-    <h1 className="text-6xl font-bold text-[#dc2626] leading-none">
-      Grasp
-    </h1>
-  </div>
+          {/* Logo Graphic (Circle and G) */}
+          <div className="relative flex items-center justify-center mb-6 ml-8">
+            {/* Dark Gray Circle */}
+            <div className="absolute w-20 h-20 bg-[#515151] rounded-full -left-12 z-0 top-1/2 -translate-y-[45%]"></div>
+            {/* Red G */}
+            <div className="text-[150px] leading-none font-black text-[#dc2626] relative z-10 tracking-tighter">
+              G
+            </div>
+          </div>
 
-  {/* Subtitle / Extra Text */}
-  <p className="mt-6 text-gray-500 tracking-[4px] text-sm font-bold uppercase">
-    Admin Report Generator
-  </p>
+          {/* Logo Text */}
+          <div className="flex items-baseline tracking-tight">
+            <h1 className="text-6xl font-medium text-[#515151] leading-none">
+              One
+            </h1>
+            <h1 className="text-6xl font-bold text-[#dc2626] leading-none">
+              Grasp
+            </h1>
+          </div>
 
-</div>
+          {/* Subtitle / Extra Text */}
+          <p className="mt-6 text-gray-500 tracking-[4px] text-sm font-bold uppercase">
+            Admin Report Generator
+          </p>
+
+        </div>
 
         {/* REPORT GENERATOR */}
 
