@@ -64,46 +64,25 @@ export default function AdminPage() {
     };
   useEffect(() => {
 
-    const checkAdmin =
-      async () => {
+  const checkAdmin =
+    async () => {
 
-        const {
-          data: { session },
-        } = await supabase
-          .auth
-          .getSession();
+      const {
+        data: { session },
+      } = await supabase
+        .auth
+        .getSession();
 
-        // NOT LOGGED IN
+      // NOT LOGGED IN
 
-        if (!session) {
+      if (!session) {
 
-          router.push("/login");
+        router.push("/login");
 
-          return;
-        }
+        return;
+      }
 
-        // FETCH USER ROLE
-
-        // GET USER
-
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase
-          .auth
-          .getUser();
-
-        if (
-          userError ||
-          !user
-        ) {
-
-          router.push("/login");
-
-          return;
-        }
-
-        // FETCH PROFILE
+      // FETCH USER ROLE
 
       const {
         data: profile,
@@ -173,34 +152,34 @@ export default function AdminPage() {
 
       <div className="max-w-5xl mx-auto">
 
-        <div className="bg-white rounded-[32px] shadow-lg border border-gray-200 p-12 flex flex-col items-center justify-center w-max mx-auto font-sans">
+    <div className="bg-white rounded-[32px] shadow-lg border border-gray-200 p-12 flex flex-col items-center justify-center w-max mx-auto font-sans">
+  
+  {/* Logo Graphic (Circle and G) */}
+  <div className="relative flex items-center justify-center mb-6 ml-8">
+    {/* Dark Gray Circle */}
+    <div className="absolute w-20 h-20 bg-[#515151] rounded-full -left-12 z-0 top-1/2 -translate-y-[45%]"></div>
+    {/* Red G */}
+    <div className="text-[150px] leading-none font-black text-[#dc2626] relative z-10 tracking-tighter">
+      G
+    </div>
+  </div>
 
-          {/* Logo Graphic (Circle and G) */}
-          <div className="relative flex items-center justify-center mb-6 ml-8">
-            {/* Dark Gray Circle */}
-            <div className="absolute w-20 h-20 bg-[#515151] rounded-full -left-12 z-0 top-1/2 -translate-y-[45%]"></div>
-            {/* Red G */}
-            <div className="text-[150px] leading-none font-black text-[#dc2626] relative z-10 tracking-tighter">
-              G
-            </div>
-          </div>
+  {/* Logo Text */}
+  <div className="flex items-baseline tracking-tight">
+    <h1 className="text-6xl font-medium text-[#515151] leading-none">
+      One
+    </h1>
+    <h1 className="text-6xl font-bold text-[#dc2626] leading-none">
+      Grasp
+    </h1>
+  </div>
 
-          {/* Logo Text */}
-          <div className="flex items-baseline tracking-tight">
-            <h1 className="text-6xl font-medium text-[#515151] leading-none">
-              One
-            </h1>
-            <h1 className="text-6xl font-bold text-[#dc2626] leading-none">
-              Grasp
-            </h1>
-          </div>
+  {/* Subtitle / Extra Text */}
+  <p className="mt-6 text-gray-500 tracking-[4px] text-sm font-bold uppercase">
+    Admin Report Generator
+  </p>
 
-          {/* Subtitle / Extra Text */}
-          <p className="mt-6 text-gray-500 tracking-[4px] text-sm font-bold uppercase">
-            Admin Report Generator
-          </p>
-
-        </div>
+</div>
 
         {/* REPORT GENERATOR */}
 
