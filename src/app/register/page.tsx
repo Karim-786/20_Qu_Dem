@@ -10,75 +10,72 @@ export default function RegisterPage() {
 
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name, setName] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
 
   const handleRegister = async (
-  e: React.FormEvent<HTMLFormElement>
-) => {
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
 
-  e.preventDefault();
+    e.preventDefault();
 
-  console.log("NAME:", name);
-  console.log("EMAIL:", email);
-  console.log("PASSWORD:", password);
+    setLoading(true);
 
-  setLoading(true);
+    const { error } =
+      await supabase.auth.signUp({
 
-  // SIGNUP
+        email,
 
-  const { data, error } =
-    await supabase.auth.signUp({
+        password,
 
-      email,
-
-      password,
-
-      options: {
-        data: {
-          full_name: name,
+        options: {
+          data: {
+            full_name: name,
+          },
         },
-      },
-    });
+      });
 
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
+    if (error) {
 
-  if (error) {
+      alert(error.message);
 
-    alert(error.message);
+      setLoading(false);
+
+      return;
+    }
+
+    const { error: profileError } =
+      await supabase
+        .from("profiles")
+        .insert([
+          {
+            email,
+            role: "student",
+          },
+        ]);
+
+    console.log(profileError);
 
     setLoading(false);
 
-    return;
-  }
+    alert(
+      "Registration Successful!"
+    );
 
-  // INSERT PROFILE
+    router.push("/login");
+  };
 
-  const { error: profileError } =
-    await supabase
-      .from("profiles")
-      .insert([
-        {
-          email,
-          role: "student",
-        },
-      ]);
-
-  console.log(profileError);
-
-  alert(
-    "Registration Successful!"
-  );
-
-  router.push("/login");
-
-  setLoading(false);
-};
   return (
+
     <main className="min-h-screen flex items-center justify-center bg-[#f7f7f7] px-6">
 
       <div className="w-full max-w-md bg-white rounded-[32px] shadow-xl border border-gray-200 p-10">
@@ -100,7 +97,6 @@ export default function RegisterPage() {
           className="mt-10 space-y-6"
         >
 
-          {/* Name */}
           <div>
 
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -109,14 +105,19 @@ export default function RegisterPage() {
 
             <div className="flex items-center border border-gray-300 rounded-2xl px-4 py-4">
 
-              <User size={20} className="text-gray-400" />
+              <User
+                size={20}
+                className="text-gray-400"
+              />
 
               <input
                 type="text"
                 placeholder="Enter full name"
                 className="w-full ml-3 outline-none"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
                 required
               />
 
@@ -124,7 +125,6 @@ export default function RegisterPage() {
 
           </div>
 
-          {/* Email */}
           <div>
 
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -133,14 +133,19 @@ export default function RegisterPage() {
 
             <div className="flex items-center border border-gray-300 rounded-2xl px-4 py-4">
 
-              <Mail size={20} className="text-gray-400" />
+              <Mail
+                size={20}
+                className="text-gray-400"
+              />
 
               <input
                 type="email"
                 placeholder="Enter email"
                 className="w-full ml-3 outline-none"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
                 required
               />
 
@@ -148,7 +153,6 @@ export default function RegisterPage() {
 
           </div>
 
-          {/* Password */}
           <div>
 
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -157,14 +161,19 @@ export default function RegisterPage() {
 
             <div className="flex items-center border border-gray-300 rounded-2xl px-4 py-4">
 
-              <Lock size={20} className="text-gray-400" />
+              <Lock
+                size={20}
+                className="text-gray-400"
+              />
 
               <input
                 type="password"
                 placeholder="Create password"
                 className="w-full ml-3 outline-none"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
                 required
               />
 
@@ -172,25 +181,33 @@ export default function RegisterPage() {
 
           </div>
 
-          {/* Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full py-4 rounded-2xl bg-red-600 text-white font-semibold hover:bg-red-700 transition"
           >
-            {loading ? "Creating Account..." : "Create Account"}
+
+            {
+              loading
+                ? "Creating Account..."
+                : "Create Account"
+            }
+
           </button>
 
         </form>
 
         <p className="mt-8 text-center text-gray-600">
+
           Already have an account?{" "}
+
           <Link
             href="/login"
             className="text-red-600 font-semibold hover:underline"
           >
             Login
           </Link>
+
         </p>
 
       </div>
